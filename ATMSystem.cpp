@@ -15,6 +15,7 @@ struct stClientData {
 };
 
 enum enATMOptions { QUICK_WITHDRAW = 1, NORMAL_WITHDRAW, DEPOSIT, CHECK_BALANCE, LOGOUT };
+enum enAmount {TWENTY = 1, FIFTY, HUNDRED, TWO_HUNDRED, FOUR_HUNDRED, SIX_HUNDRED , EIGHT_HUNDRED , THOUSAND, EXIST = 9 };
 
 const string clientsFile = "Clients.txt";
 stClientData currUser;
@@ -78,16 +79,157 @@ void backToMainMenu(){
     atmMenuScreen();
 }
 
+stClientData transaction(string accountNumber, vector<stClientData> &vClients, double amount){
+    char answer = readChar("Are you sure you want to perform this transaction? ");
+    if(tolower(answer) == 'y'){
+        for(stClientData &client: vClients){
+            if(convertTextToLower(client.accountNumber) == convertTextToLower(accountNumber)){  
+                client.Balance = client.Balance + amount;
+                return client;
+            }
+        }
+    }
+}
+
+string convertRecordToLine(stClientData clientData, string delim = "#//#"){
+    return(
+        clientData.accountNumber + delim +
+        clientData.pinCode + delim +
+        clientData.name + delim + 
+        clientData.phone + delim +
+        to_string(clientData.Balance)
+    );
+}
+
+void saveClientsToFile(vector<stClientData> vClients){
+    fstream file; 
+    file.open(clientsFile, ios::out);
+    if(file.is_open()){
+        for(stClientData &client: vClients){
+            if(!client.markforDeletion){
+                string line = convertRecordToLine(client);
+                file << line << endl;
+            }
+        }
+        file.close();
+    }
+}
+
+void quickWithDraw(short withDrawAmount){
+    vector<stClientData> vClients = getClients(clientsFile);
+        while(currUser.Balance < withDrawAmount){
+            cout << "Exceed Amount you can withdraw up to " << currUser.Balance << endl;
+            withDrawAmount = readNumber("Choose what to withdraw from ? [1 to 8]? ");
+            while(withDrawAmount < 1 || withDrawAmount > 8){
+                withDrawAmount = readNumber("Choose what to withdraw from ? [1 to 8]? ");
+            }
+        }
+        stClientData updatedClient = transaction(currUser.accountNumber, vClients, withDrawAmount * -1);
+        currUser = updatedClient; 
+        saveClientsToFile(vClients);
+        cout << "Withdraw made successfully :)" << endl;
+}
+
+void NormalWithDraw(){
+    header("Normal Withdraw Screen");
+    cout <<"==================================================\n";
+    cout << "Your Balance is: " << currUser.Balance << endl;
+    cout <<"==================================================\n";
+    int withDrawAmount = readNumber("Enter an amount multiple of 5's ? ");
+    vector<stClientData> vClients = getClients(clientsFile);
+        while(currUser.Balance < withDrawAmount){
+            cout << "Exceed Amount you can withdraw up to " << currUser.Balance << endl;
+            withDrawAmount = readNumber("Enter an amount multiple of 5's ? ");
+        }
+        while(withDrawAmount % 5 != 0 ){
+            cout << "Invalid value," << currUser.Balance << endl;
+            withDrawAmount = readNumber("Enter an amount multiple of 5's ? ");
+        }
+        stClientData updatedClient = transaction(currUser.accountNumber, vClients, withDrawAmount * -1);
+        currUser = updatedClient; 
+        saveClientsToFile(vClients);
+        cout << "Withdraw made successfully :)" << endl;
+}
+
+void DepositScreen(){
+    header("Deposit Screen");
+    cout <<"==================================================\n";
+    cout << "Your Balance is: " << currUser.Balance << endl;
+    cout <<"==================================================\n";
+    int depositAmount = readNumber("Enter an amount you want to deposit ? ");
+    vector<stClientData> vClients = getClients(clientsFile);
+        stClientData updatedClient = transaction(currUser.accountNumber, vClients, depositAmount);
+        currUser = updatedClient; 
+        saveClientsToFile(vClients);
+        cout << "Deposit made successfully :)" << endl;
+}
+
+void chooseAmount(short option){
+    switch ((enAmount) option){
+        case enAmount::TWENTY :
+        quickWithDraw(20);
+        break;
+        case enAmount::FIFTY :
+        quickWithDraw(50);
+        break;
+        case enAmount::HUNDRED :
+        cout << "the option is " << option << endl;
+        quickWithDraw(100);
+        break;
+    case enAmount::TWO_HUNDRED :
+        quickWithDraw(200);
+        break;
+    case enAmount::FOUR_HUNDRED :
+        quickWithDraw(400);
+        break;
+    case enAmount::SIX_HUNDRED :
+        quickWithDraw(600);
+        break;
+    case enAmount::EIGHT_HUNDRED :
+        quickWithDraw(800);
+        break;
+    case enAmount::THOUSAND:
+        quickWithDraw(1000);
+        break;
+    case enAmount::EXIST:
+        atmMenuScreen();
+        break;
+    default:
+        break;
+    }
+}
+
+void quickWithDrawScreen(){
+    system("cls");
+    header("Quick Withdraw");
+    cout << "\t[1] 20 \t"    "\t[2] 50.\n" << endl;
+    cout << "\t[3] 100 \t"   "[4] 200.\n" << endl;
+    cout << "\t[5] 400 \t"   "[6] 600.\n" << endl;
+    cout << "\t[7] 800 \t"   "[8] 1000.\n" << endl;
+    cout << "\t[9] Exist \t" << endl;
+    cout <<"==================================================\n";
+    cout << "Your Balance is: " << currUser.Balance << endl;
+    cout <<"==================================================\n";
+    short chosenOption = readNumber("Choose what to withdraw from ? [1 to 8]? ");
+    while(chosenOption < 1 || chosenOption > 9){
+        chosenOption = readNumber("Choose what to withdraw from ? [1 to 8]? ");
+    }
+    chooseAmount(chosenOption);
+}
+
 void chooseOperation(short option){
     switch ((enATMOptions) option){
         case enATMOptions::QUICK_WITHDRAW : 
-        
+        quickWithDrawScreen();
+        backToMainMenu();
         break;  
         case enATMOptions::NORMAL_WITHDRAW :
-        
+        NormalWithDraw();
+        backToMainMenu();
         break;
         case enATMOptions::DEPOSIT :
-        
+        DepositScreen();
+        backToMainMenu();
         break;
         case enATMOptions::CHECK_BALANCE :
         checkBalanceScreen();
