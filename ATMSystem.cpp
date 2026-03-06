@@ -17,8 +17,10 @@ struct stClientData {
 enum enATMOptions { QUICK_WITHDRAW = 1, NORMAL_WITHDRAW, DEPOSIT, CHECK_BALANCE, LOGOUT };
 
 const string clientsFile = "Clients.txt";
+stClientData currUser;
 
 void showLoginScreen();
+void atmMenuScreen();
 
 void header(string headerTxt){
     cout << "====================================================\n";
@@ -51,14 +53,29 @@ vector<stClientData> getClients(string fileName){
     return vClients;
 }
 
-bool isClientExist(string accountNumber, string pinCode){
-    vector<stClientData> users = getClients(clientsFile);
-    for(stClientData &user: users){
-        if(user.accountNumber == accountNumber && user.pinCode == pinCode){
+bool isClientExist(string accountNumber, string pinCode, stClientData &clientData){
+    vector<stClientData> clients = getClients(clientsFile);
+    for(stClientData &client: clients){
+        if(client.accountNumber == accountNumber && client.pinCode == pinCode){
+            clientData = client;
             return true;
         }
     }
     return false;
+}
+
+void checkBalanceScreen(){
+    header("Screen Balance");
+    cout << "| " << left << setw(15) << "Balance";
+    cout << "\n--------------------------------------------------------------------------------------------------\n";
+    cout << "| " << left << setw(15) <<  currUser.Balance << endl;
+    cout << endl;
+}
+
+void backToMainMenu(){
+    cout << "Press any key to go back to the Main Menu :)" << endl;
+    system("pause>0");
+    atmMenuScreen();
 }
 
 void chooseOperation(short option){
@@ -73,6 +90,8 @@ void chooseOperation(short option){
         
         break;
         case enATMOptions::CHECK_BALANCE :
+        checkBalanceScreen();
+        backToMainMenu();
         break;
         case enATMOptions::LOGOUT: 
         showLoginScreen();
@@ -101,10 +120,12 @@ void showLoginScreen(){
     system("cls");
     header("Login Screen");
     bool clientExist = false;
+    stClientData clientData;
     do{
         string username = readString("Enter your Account Number? ");
         string password = readString("Enter your PinCode? ");
-        if(isClientExist(username, password)){
+        if(isClientExist(username, password, clientData)){
+            currUser = clientData;
             clientExist = true;
         }else{
             clientExist = false;
