@@ -14,7 +14,7 @@ struct stClientData {
     bool markforDeletion = false;
 };
 
-enum enATMOptions { QUICK_WITHDRAW = 1, NORMAL_WITHDRAW, DEPOSIT, CHECK_BALANCE, LOGOUT };
+enum enATMOptions { QUICK_WITHDRAW = 1, NORMAL_WITHDRAW, DEPOSIT, CHECK_BALANCE, CHNAGE_PASS, LOGOUT };
 enum enAmount {TWENTY = 1, FIFTY, HUNDRED, TWO_HUNDRED, FOUR_HUNDRED, SIX_HUNDRED , EIGHT_HUNDRED , THOUSAND, EXIST = 9 };
 
 const string clientsFile = "Clients.txt";
@@ -217,6 +217,52 @@ void quickWithDrawScreen(){
     chooseAmount(chosenOption);
 }
 
+bool findUserByUsername(string username,stClientData &clientData, vector<stClientData> &vClients){
+    for(stClientData &client: vClients){
+        if(client.name == username){    
+            clientData = client;
+            return true;
+        }
+    }
+    return false;
+}
+
+bool changePassword(string oldPinCode, stClientData clientData, vector<stClientData> &vClients){
+    for(stClientData &client: vClients){
+        if(client.accountNumber == clientData.accountNumber){
+            if(oldPinCode == client.pinCode){
+                string newPinCode =  readString("please Enter your new password");
+                string confirmPinCode = readString("please Confirm your new password");
+                if(newPinCode == confirmPinCode){
+                    client.pinCode = newPinCode;
+                    return true;
+                }else{
+                    cout << "passwords don't match" << endl;
+                    return false;
+                }
+            }else{
+                cout << "old pinCodes don't match" << endl;
+                return false;
+            }
+        }
+    }
+}
+
+void changePasswordScreen(){
+    header("Change Password Screen");
+    vector<stClientData> vClients =  getClients(clientsFile);
+    stClientData client;
+    if(findUserByUsername(currUser.name, client,vClients)){
+        string oldPinCode =  readString("Please Enter your old password ? ");
+        if(changePassword(oldPinCode, client, vClients)){
+            saveClientsToFile(vClients);
+            cout << "Password changed successfully :)" << endl;
+        }else{
+            cout << "Failed to change password :(" << endl;
+        }
+    }   
+}
+
 void chooseOperation(short option){
     switch ((enATMOptions) option){
         case enATMOptions::QUICK_WITHDRAW : 
@@ -233,6 +279,10 @@ void chooseOperation(short option){
         break;
         case enATMOptions::CHECK_BALANCE :
         checkBalanceScreen();
+        backToMainMenu();
+        break;
+        case enATMOptions::CHNAGE_PASS :
+        changePasswordScreen    ();
         backToMainMenu();
         break;
         case enATMOptions::LOGOUT: 
@@ -252,7 +302,8 @@ void atmMenuScreen(){
             "\t[2] Normal Withdraw.\n"
             "\t[3] Deposit.\n"
             "\t[4] Check Balance.\n"
-            "\t[5] Logout.\n";
+            "\t[5] Change Password.\n"
+            "\t[6] Logout.\n";
     cout <<"==================================================\n";
     short chosenOption = readNumber("Choose what do you want to do? [1 to 6]? ");
     chooseOperation(chosenOption);
